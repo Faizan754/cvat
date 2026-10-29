@@ -24,9 +24,9 @@ SHA, a file:line reference or pasted output. A tick without evidence counts as u
 
 - [x] No login returns 401 (raw curl output). — evidence: see Evidence section below.
 - [x] A logged-in user without access to the task gets 403 (raw curl output). — evidence: see Evidence section below.
-- [ ] MO-1 measured: 5 runs, raw output pasted in OBJECTIVES.md, median and spread (min-max),
-      commit SHA. — evidence: _pending_
-- [ ] MO-1 target met, or missed with the reason written down. — evidence: _pending_
+- [x] MO-1 measured: 5 runs, raw output pasted in OBJECTIVES.md, median and spread (min-max),
+      commit SHA. — evidence: OBJECTIVES.md Results, commit e5df67ba7, median 126.9 ms (94.3–146.3)
+- [x] MO-1 target met, or missed with the reason written down. — evidence: met: 126.9 ms ≤ 150 ms (token); basic auth 538.5 ms reported with reason
 - [ ] The filter/grouping works on the endpoint and the page, and the choice is justified in the
       Plan. — evidence: _pending_
 - [ ] Live update observed: saving an annotation in a job changes the chart without a page reload.
@@ -95,4 +95,10 @@ c AS (
  UNION ALL SELECT label_id, 'track' FROM engine_labeledtrack WHERE job_id IN (SELECT id FROM j) AND parent_id IS NULL
  UNION ALL SELECT label_id, 'tag' FROM engine_labeledimage WHERE job_id IN (SELECT id FROM j))
 SELECT l.name, count(*) n FROM c JOIN engine_label l ON l.id=c.label_id GROUP BY l.name ORDER BY n DESC, l.name;
+```
+
+**Update (2026-10-30 02:19): empty-task check. Task 2 has 3 images, labels person/car/dog and no annotations. Raw response of `GET /api/annotation_counts?task_id=2`:**
+
+```
+{"task_id":2,"total":0,"labels":[{"id":81,"name":"person","color":"#c06060","shapes":0,"tracks":0,"tags":0,"total":0},{"id":82,"name":"car","color":"#2080c0","shapes":0,"tracks":0,"tags":0,"total":0},{"id":83,"name":"dog","color":"#406040","shapes":0,"tracks":0,"tags":0,"total":0}]}
 ```
