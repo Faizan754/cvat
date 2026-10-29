@@ -24,6 +24,8 @@ query plan (`EXPLAIN ANALYZE`) before changing anything, and report the miss as 
 
 **Update (2026-10-30 01:27): the endpoint path is `GET /api/annotation_counts?task_id=N`. Correction: the sentence above saying CVAT's own annotations endpoint "is much slower" is an expectation, not a measurement. It has not been measured.**
 
+**Update (2026-10-30 02:10): the measurement task is task 1: 500 images, 4012 shapes, 5 annotation jobs. Results are still pending.**
+
 ## Results
 
 _pending — raw output of 5 runs, median, spread (min–max), commit SHA will be pasted here_
