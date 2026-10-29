@@ -14,11 +14,12 @@ SHA, a file:line reference or pasted output. A tick without evidence counts as u
       of the query recorded. — evidence: `cvat/apps/test/counts.py:31-32` (`.values("label_id").annotate(count=Count("id"))`, query built at lines 29-35).
 - [x] A missing task returns 404 and a non-integer `task_id` returns 400 (raw curl output).
       — evidence: see Evidence section below.
-- [ ] The task page opens from the task actions menu and renders a bar chart of the counts.
-      — evidence: _pending_
-- [ ] A task with no annotations shows an empty state, not an empty chart. — evidence: _pending_
+- [x] The task page opens from the task actions menu and renders a bar chart of the counts.
+      — evidence: browser check by me on task 1 (Actions → Annotation counts, total 4012); commits 6fcf648ad, b3c41aa51
+- [x] A task with no annotations shows an empty state, not an empty chart. — evidence: browser check on task 2 (3 images, no annotations) shows 'No annotations in this task yet'; API output in Evidence
 - [ ] A failed request shows an error state with a retry button, and retry recovers.
       — evidence: _pending_
+  **Update (2026-10-30 02:24): not ticked. The error panel with a Retry button was seen for task 999999 (404). Retry recovering after a transient failure was not demonstrated.**
 
 ## Items 5-10
 
@@ -33,24 +34,45 @@ SHA, a file:line reference or pasted output. A tick without evidence counts as u
       — evidence: _pending_
 - [ ] Reconnect observed: after restarting `cvat_server` the page shows the dropped state,
       reconnects on its own and re-fetches the counts. — evidence: _pending_
-- [ ] Decision record written at the end of the Plan. — evidence: _pending_
+- [x] Decision record written at the end of the Plan. — evidence: PLAN.md, Decision record
 
 ## Presentation
 
 - [ ] black, isort (line length 100) and eslint report nothing on the changed files (command
       output). — evidence: _pending_
-- [ ] No dead code, commented-out blocks, debug prints or stray files in the diff
-      (`git diff --stat` against the base SHA). — evidence: _pending_
-- [ ] Commits are small and their messages say what changed and why; the first commit holds only
-      these three docs (`git log --oneline`). — evidence: _pending_
-- [ ] Everything not finished is listed below with the reason. — evidence: _pending_
-- [ ] The three docs describe only what the repository contains. — evidence: _pending_
+  **Update (2026-10-30 02:24): not ticked. black and isort are clean on all changed Python files (backend agent run). eslint and tsc were NOT run: there is no node on the host, and the Docker UI build only transpiles with babel (no type check). The page was verified in the browser instead.**
+- [x] No dead code, commented-out blocks, debug prints or stray files in the diff
+      (`git diff --stat` against the base SHA). — evidence: `git diff --stat 30d86df3c..HEAD`: `16 files changed, 671 insertions(+)` (no deletions; only `cvat/apps/test/`, the UI folder `annotation-counts/`, the route, the menu entry, one line each in `settings/base.py` and `urls.py`, and the three docs)
+- [x] Commits are small and their messages say what changed and why; the first commit holds only
+      these three docs (`git log --oneline`). — evidence: `git log --oneline 30d86df3c..HEAD`:
+      ```
+      b3c41aa51 Link annotation counts page from the task actions menu
+      6fcf648ad Add annotation counts page with bar chart, empty and error states
+      e58a3c73f docs: record MO-1 measurement (median 126.9 ms, target met) and empty-task check
+      e5df67ba7 docs: record 500-image dataset, shape-count definition and endpoint evidence
+      bcd9bac09 Expose annotation counts at GET /api/annotation_counts behind task view permission
+      4e4ff966e Add per-label annotation count query for a task
+      8e7020117 docs: add plan, definition of done and objectives before any code
+      ```
+- [x] Everything not finished is listed below with the reason. — evidence: see Not finished
+- [x] The three docs describe only what the repository contains. — evidence: re-read against the code and git log at 2026-10-30 02:24
 
 ## Not finished
 
 _To be filled at the end: each item not reached or not working, and why._
 
 **Update (2026-10-30 01:27): with about 2 h left, items 8 and 9 are dropped up front (reason: time). Their lines above stay unticked and will be marked as not reached. Item 7 is a stretch.**
+
+**Update (2026-10-30 02:24): final list of what is not finished, with the reason.**
+
+- Item 7 (per-type grouping): the endpoint already returns `shapes` / `tracks` / `tags` per label, but the UI part was not done (time). Also, the COCO import stores everything as shapes, so on task 1 the split would show 0 tracks and 0 tags.
+- Item 8 (WebSocket live updates) and item 9 (reconnect): not reached (time). The planned design is in the Plan, "WebSocket approach (tentative)".
+- eslint and tsc were not run: no node on the host. The page was checked in the browser instead.
+- Retry recovering after a transient failure was not demonstrated; only the error panel with Retry (task 999999, 404) was seen.
+- No unit tests. Evidence is from curl and psql instead.
+- `cvat/schema.yml` was not regenerated. drf-spectacular also describes the 200 response as an array, because the action is `list`; the real response is an object.
+- A missing `task_id` returns the same "must be an integer" 400 message as a non-integer one (see Evidence).
+- The counts do not merge annotations on overlapping segment frames, so a task with overlap > 0 would count those objects once per job. Task 1 has overlap 0. See Plan, Decision record.
 
 ## Evidence
 

@@ -125,6 +125,34 @@ The endpoint path is now fixed as `/api/annotation_counts`.
 - Why I chose this: it is the simpler query, and it matches what CVAT stores and shows in the job. Counting COCO objects would need a count of distinct groups instead of rows.
 - What it costs: the number differs from COCO's object count. Anyone comparing the chart with COCO has to know that multi-part objects count once per part.
 
+**Update (2026-10-30 02:24): where I stopped. Items 1-6 are done. Items 7, 8 and 9 were not reached (time). Item 10 is the decision record below.**
+
+Actual commit order (`git log --oneline 30d86df3c..HEAD`, oldest at the bottom):
+
+```
+b3c41aa51 Link annotation counts page from the task actions menu
+6fcf648ad Add annotation counts page with bar chart, empty and error states
+e58a3c73f docs: record MO-1 measurement (median 126.9 ms, target met) and empty-task check
+e5df67ba7 docs: record 500-image dataset, shape-count definition and endpoint evidence
+bcd9bac09 Expose annotation counts at GET /api/annotation_counts behind task view permission
+4e4ff966e Add per-label annotation count query for a task
+8e7020117 docs: add plan, definition of done and objectives before any code
+```
+
 ## Decision record
 
 (written when item 10 is reached)
+
+**Update (2026-10-30 02:24): decision record.**
+
+- **Taken:** count in SQL. One `GROUP BY label_id` per annotation table (shapes, tracks, tags) in `cvat/apps/test/counts.py:28-39`, filtered to the task's jobs with CVAT's job-type rule, merged by label in Python. Access uses a small permission class that reuses `TaskPermission`'s view scope, so no new OPA rule. Measured: median 126.9 ms (OBJECTIVES.md); the shapes query itself executes in ~6 ms (`EXPLAIN ANALYZE`).
+- **Rejected:** reuse CVAT's own loader, `TaskAnnotation` in `cvat/apps/dataset_manager/task.py:1025` (what the export uses), and count in Python. Why: it loads every shape with its points into memory, which is the wrong cost on a 4.8 GiB machine and against a 150 ms target, and it is far more code to trace and explain.
+- **What rejecting it cost:** `TaskAnnotation.init_from_db` (task.py:1185-1203) merges job after job through `_merge_data` (task.py:1077-1079) into `AnnotationManager.merge(..., overlap=task.overlap)` (`cvat/apps/dataset_manager/annotation.py:233-246`). On the overlapping frames it matches objects from neighbouring jobs (Hungarian matching, annotation.py:424-509) and unites them. My counts skip that, so in a task with overlap > 0 (typical for video) an object on the overlapping frames is counted once per job. Task 1 has overlap = 0 (segment size 100, 500 frames), so it is not affected here.
+- I also count stored shapes, not merged objects: a multi-part COCO object counts once per part (+421 on task 1, see "Changes to this plan").
+
+Second, smaller decision:
+
+- **Taken:** a new endpoint in app `test`, `GET /api/annotation_counts?task_id=N`.
+- **Rejected:** a nested action `/api/tasks/{id}/...` on the engine's `TaskViewSet`.
+- **Why:** the brief requires the backend work in app `test`, and this leaves the engine's `TaskViewSet` untouched.
+- **Cost:** the URL is less RESTful, and the permission class has to parse `task_id` and load the task itself (`cvat/apps/test/permissions.py:20-27`).
